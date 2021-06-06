@@ -1,0 +1,8 @@
+.br_dd_menu {
+  height: 12em;
+  overflow-y: scroll;
+}
+
+.card {
+  min-height: 23rem;
+}
