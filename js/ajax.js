@@ -9,16 +9,18 @@ let filterArea = document.getElementById('filterArea');
 let paginationAreaStart = document.getElementById('pagination-start');
 let paginationAreaEnd = document.getElementById('pagination-end');
 
-document.getElementById('getAlphabeticalPaged').addEventListener('click', function () { getAlphabeticalPaged(1, 397, 'name', '') });
-document.getElementById('getBySearch').addEventListener('click', getBySearch);
-document.getElementById('searchField').addEventListener('keyup', function (event) {
+let searchlistOptions = document.getElementById('searchlistOptions');
+let searchField = document.getElementById('searchField');
+searchField.addEventListener('keydown', function (event) {
+  autoCompleteSearchField();
   if (event.keyCode === 13) { getBySearch() }
 });
 
+document.getElementById('getAlphabeticalPaged').addEventListener('click', function () { getAlphabeticalPaged(1, 397, 'name', '') });
+document.getElementById('getBySearch').addEventListener('click', getBySearch);
+
 async function getAlphabeticalPaged(currentPage = 1, pagesAvailable = 10, type = 'name') {
-
   resultsArea.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
   await axios
     .get('https://api.openbrewerydb.org/breweries?sort=' + 'name&page=' + currentPage)
     .then(response => generateOutput(response, 'getAlphabeticalPaged', 'name', currentPage, pagesAvailable))
@@ -28,9 +30,7 @@ async function getAlphabeticalPaged(currentPage = 1, pagesAvailable = 10, type =
 }
 
 async function getByCity(currentPage = 1, pagesAvailable = 10, city = 'san_diego') {
-
   resultsArea.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
   await axios
     .get('https://api.openbrewerydb.org/breweries?by_city=' + city + '&sort=' + 'name&page=' + currentPage)
     .then(response => generateOutput(response, 'getByCity', city, currentPage, pagesAvailable))
@@ -40,9 +40,7 @@ async function getByCity(currentPage = 1, pagesAvailable = 10, city = 'san_diego
 }
 
 async function getByState(currentPage = 1, pagesAvailable = 10, state = 'california') {
-
   resultsArea.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
   await axios
     .get('https://api.openbrewerydb.org/breweries?by_state=' + state + '&sort=name&page=' + currentPage)
     .then(response => generateOutput(response, 'getByState', state, currentPage, pagesAvailable))
@@ -52,9 +50,7 @@ async function getByState(currentPage = 1, pagesAvailable = 10, state = 'califor
 }
 
 async function getByType(currentPage = 1, pagesAvailable = 10, type = 'micro') {
-
   resultsArea.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
   await axios
     .get('https://api.openbrewerydb.org/breweries?by_type=' + type + '&sort=name&page=' + currentPage)
     .then(response => generateOutput(response, 'getByType', type, currentPage, pagesAvailable))
@@ -64,13 +60,9 @@ async function getByType(currentPage = 1, pagesAvailable = 10, type = 'micro') {
 }
 
 async function getBySearch() {
-
   let searchterm = document.getElementById('searchField').value.toLowerCase().replace(/ /g, "_");
-
   if (searchterm) {
-
     resultsArea.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
-
     await axios
       .get('https://api.openbrewerydb.org/breweries/search?query=' + searchterm)
       .then(response => generateOutput(response, 'getBySearch', searchterm, 1, 1))
@@ -81,30 +73,43 @@ async function getBySearch() {
   }
 }
 
+async function autoCompleteSearchField() {
+  let searchtermAutocomplete = searchField.value.toLowerCase().replace(/ /g, "_");
+  if (searchtermAutocomplete) {
+    await axios
+      .get('https://api.openbrewerydb.org/breweries/autocomplete?query=' + searchtermAutocomplete)
+      .then(response => generateDataListForAutocomplete(response))
+      .catch(error => console.error(error));
+  }
+}
+
+function generateDataListForAutocomplete(response) {
+  let autocompleteSuggestions = response.data;
+  let suggestionsContent = '';
+  for (let suggestion of autocompleteSuggestions) {
+    suggestionsContent += `<option value="${suggestion.name}">`;
+  }
+  searchlistOptions.innerHTML = suggestionsContent;
+}
+
 function generateOutput(response, responseType, responseContent, currentPage = 1, pagesAvailable = 10) {
   let displayContent = '';
   let breweryData = response.data;
-
   if (breweryData.length != 0) {
-
     resultsArea.innerHTML = '';
-
     let street;
     let postal_code;
     let city;
     let state;
     let longitude;
     let latitude;
-
     for (let brewery of breweryData) {
-
       if (brewery.street) { street = brewery.street } else { street = "No street available" };
       if (brewery.postal_code) { postal_code = brewery.postal_code } else { postal_code = "no postalcode available" };
       if (brewery.city) { city = brewery.city } else { city = "no city available" };
       if (brewery.state) { state = brewery.state } else { city = "no state available" };
       if (brewery.longitude) { longitude = brewery.longitude } else { longitude = "no data" };
       if (brewery.latitude) { latitude = brewery.latitude } else { latitude = "no data" };
-
       displayContent += `
       <div class="col-md-6">
         <div class="card m-1 border-secondary">
@@ -123,43 +128,34 @@ function generateOutput(response, responseType, responseContent, currentPage = 1
           </div>
           <div class="card-footer">
           `;
-
       if (brewery.website_url != null) {
         displayContent += `<a href="${brewery.website_url}" class="btn btn-sm btn-primary m-1" target="_blank">&#8674; Website</a>`;
       } else {
         displayContent += `<p class="text-danger"><small>No website available.</small></p>`;
       };
-
       if (brewery.longitude != null && brewery.latitude != null) {
         displayContent += `<a class="btn btn-secondary btn-sm m-1" data-bs-toggle="modal" data-bs-target="#locationModal" data-bs-mapTitle="${brewery.name}" data-bs-address="${street}, ${postal_code}, ${city}" data-bs-longitude="${longitude}" data-bs-latitude="${latitude}">&#8674; Location</a>`;
       } else {
         displayContent += `<p class="text-danger"><small>No location data available.</small></p>`;
       };
-
       displayContent += `
           </div>
         </div>
       </div>`;
-
       resultsArea.innerHTML = displayContent;
-
     }
-
     if (pagesAvailable > 1) {
       generatePagination(responseType, responseContent, currentPage, pagesAvailable);
     } else {
       paginationAreaStart.innerHTML = '';
       paginationAreaEnd.innerHTML = '';
     }
-
     prepareMapLocationModal();
-
   } else {
     resultsArea.innerHTML = '<h3 class="text-center"><span class="badge bg-danger">No breweries found</span></h2>';
     paginationAreaStart.innerHTML = '';
     paginationAreaEnd.innerHTML = '';
   }
-
 }
 
 function generateMenuList(methodName, menuName, parameterList) {
@@ -175,15 +171,11 @@ function generateMenuList(methodName, menuName, parameterList) {
 function addClickListenersToMenuItems() {
   document.querySelectorAll('.brewery-dropdown').forEach(item => {
     item.addEventListener('click', event => {
-
       let clickMethod = event.target.getAttribute('data-bs-method');
-
       let previousActiveMenuItem = document.querySelector('.brewery-dropdown.active');
       if (previousActiveMenuItem) { previousActiveMenuItem.classList.remove('active') };
-
       let menuItemID = event.target.getAttribute('id');
       document.getElementById(menuItemID).classList.add('active');
-
       Function(clickMethod)();
     })
   })
@@ -195,9 +187,7 @@ function generatePagination(responseType, responseContent, currentPage, pagesAva
   if (rangeStart < 1) { rangeStart = 1 };
   let rangeEnd = currentPage + 5;
   if (rangeEnd > pagesAvailable) { rangeEnd = pagesAvailable };
-
   if (currentPage != rangeStart) { paginationContent += `<li class="page-item"><a class="page-link" href="#" onclick="${responseType}(${currentPage - 1}, ${pagesAvailable}, '${responseContent}')">&laquo;</a></li>`; }
-
   for (let page = rangeStart; page <= rangeEnd; page++) {
     if (page == currentPage) {
       paginationContent += `<li class="page-item active"><a class="page-link" href="#" onclick="${responseType}(${page}, ${pagesAvailable},  '${responseContent}')">${page}</a></li>`;
@@ -206,7 +196,6 @@ function generatePagination(responseType, responseContent, currentPage, pagesAva
     }
   }
   if (currentPage != rangeEnd) { paginationContent += `<li class="page-item"><a class="page-link" href="#" onclick="${responseType}(${currentPage + 1}, ${pagesAvailable}, '${responseContent}')">&raquo;</a></li>`; }
-
   paginationAreaStart.innerHTML = paginationContent;
   paginationAreaEnd.innerHTML = paginationContent;
 }
@@ -214,23 +203,19 @@ function generatePagination(responseType, responseContent, currentPage, pagesAva
 function prepareMapLocationModal() {
   let locationModal = document.getElementById('locationModal');
   let largeMapButton = document.getElementById('largeMapButton');
-
   locationModal.addEventListener('show.bs.modal', function (event) {
     let button = event.relatedTarget;
     let mapName = button.getAttribute('data-bs-mapTitle');
     let modalLongitude = button.getAttribute('data-bs-longitude');
     let modalLatitude = button.getAttribute('data-bs-latitude');
     let modalAddress = button.getAttribute('data-bs-address');
-
     let modalTitle = locationModal.querySelector('.modal-title')
     let modalLocationMap = locationModal.querySelector('#locationMap');
-
     modalTitle.textContent = mapName;
     modalLocationMap.innerHTML = `<iframe width="100%" height="400" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://www.openstreetmap.org/export/embed.html?bbox=${modalLongitude}%2C${modalLatitude}%2C${modalLongitude}5%2C${modalLatitude}&amp;layer=mapnik&amp;marker=${modalLatitude}%2C${modalLongitude}" style="border: 1px solid black"></iframe>`;
     addressAreaModal.innerHTML = `<p>${mapName}, ${modalAddress}.</p>`;
     largeMapButton.innerHTML = `<a class="btn btn-primary" target="_blank" href="https://www.openstreetmap.org/?mlat=${modalLatitude}&amp;mlon=${modalLongitude}#map=16/${modalLatitude}/${modalLongitude}">Large Map</a>`;
   })
-
 }
 
 function showFilter(filterParameter) {
@@ -242,7 +227,6 @@ function clearSearch() {
 }
 
 function setActiveButton(buttonID) {
-
   let previousActiveButton = document.querySelector('.btn-primary');
   previousActiveButton.classList.remove('btn-primary');
   previousActiveButton.classList.add('btn-secondary');

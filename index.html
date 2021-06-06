@@ -19,8 +19,9 @@
       <div class="row g-3 text-center">
         <div class="col-md-4 offset-md-4">
           <div class="input-group mb-3">
-            <input id="searchField" type="text" class="form-control" placeholder="Search for Brewery"
-              aria-label="Search for Brewery" aria-describedby="search-button">
+            <input id="searchField" type="text" list="searchlistOptions" class="form-control"
+              placeholder="Search for Brewery" aria-label="Search for Brewery" aria-describedby="search-field">
+            <datalist id="searchlistOptions"></datalist>
             <button class="btn btn-secondary" id="getBySearch">Search</button>
           </div>
         </div>
@@ -93,7 +94,9 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body text-center">
-            <p><span class="badge rounded-pill bg-warning"><a href="https://www.openstreetmap.org/" class="text-decoration-none text-dark" target="_blank">Map view provided by Openstreetmap</a></span></p>
+            <p><span class="badge rounded-pill bg-warning"><a href="https://www.openstreetmap.org/"
+                  class="text-decoration-none text-dark" target="_blank">Map view provided by Openstreetmap</a></span>
+            </p>
             <div id="locationMap"></div>
             <div id="addressAreaModal"></div>
           </div>
